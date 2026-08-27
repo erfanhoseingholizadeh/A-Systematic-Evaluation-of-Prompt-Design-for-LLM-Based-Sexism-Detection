@@ -1,0 +1,39 @@
+# Data (downloaded on demand). Anchored to repo root: an unanchored
+# "data/" also matched paper/latex/data/, silently excluding the paper's
+# own curated results CSVs from version control.
+/data/
+!/data/.gitkeep
+
+# Run outputs
+results/
+predictions/
+checkpoints/
+outputs/
+*.xlsx
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# LaTeX build artifacts (paper/latex/); main.pdf itself is not ignored
+*.aux
+*.bbl
+*.blg
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+paper/latex/*.log
+
+# OS / editor
+.DS_Store
+*.swp
+.~lock.*#

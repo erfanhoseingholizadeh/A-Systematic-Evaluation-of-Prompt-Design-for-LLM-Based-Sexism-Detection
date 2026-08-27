@@ -1,0 +1,83 @@
+\section{Experimental Setup}
+\label{sec:experimental}
+
+\subsection{Dataset}
+\label{sec:experimental:dataset}
+
+We use the full official release of the Explainable Detection of Online
+Sexism (EDOS) dataset from SemEval-2023 Task 10 \cite{kirk2023semeval}:
+20,000 English-language social media posts labeled sexist / not sexist,
+with every sexist post further annotated into one of four categories
+(threats/plans to harm/incitement, derogation, animosity, and prejudiced
+discussions). We use the dataset's own official train/dev/test partition
+(14,000/2,000/4,000), fetched from a pinned upstream commit and verified
+by SHA-256 checksum against the exact release used throughout this study,
+so an upstream force-push cannot silently change what was evaluated.
+Class balance is stable at roughly 24\% sexist / 76\% not sexist across
+all three splits (train: 3,398 sexist / 10,602 not sexist; dev: 486 / 1,514;
+test: 970 / 3,030, the exact figures underlying
+Sec.~\ref{sec:results:overview}'s base rate).
+
+The training split supplies both the few-shot demonstration pool
+(Sec.~\ref{sec:methodology:prompts}) and the fine-tuning data for all
+three baselines (Sec.~\ref{sec:methodology:baselines}); the dev split is
+used only for the fine-tuned baselines' epoch selection
+(Sec.~\ref{sec:methodology:baselines}). All reported metrics (prompting
+grid, baselines, and sensitivity sweeps alike) are computed on the same
+held-out test split. For the subtype-level error analysis
+(Sec.~\ref{sec:results:subtype}), the test split's 970 sexist examples
+break down as: derogation (454), animosity (333), prejudiced discussions
+(94), and threats/plans to harm/incitement (89).
+
+\subsection{Inference Precision}
+\label{sec:experimental:precision}
+
+Generation uses bf16 throughout, with no additional post-training
+quantization: calibration showed 4-bit NF4 quantization and bf16 cost
+effectively the same wall-clock time per example (30.28s vs.\ 30.47s), so
+bf16 was kept as the default given ample VRAM headroom across the
+roster, rather than paying the complexity of a quantized inference path
+for no measured throughput benefit. This is separate from the QLoRA
+baseline (Sec.~\ref{sec:methodology:baselines}), which always quantizes
+its frozen base weights to 4-bit NF4 as standard QLoRA practice; there,
+quantization is what makes fine-tuning a full-size 7--9B model on a
+single GPU feasible at all, an entirely different concern from
+generation-time speed.
+
+\subsection{Generation and Decoding}
+\label{sec:experimental:generation}
+
+All generation is greedy (\texttt{do\_sample=False}, \texttt{top\_p=1.0},
+no repetition penalty) under a fixed global seed (42) throughout.
+Non-chain-of-thought variants use a 2-token generation budget, matching
+their forced trailing \texttt{ANSWER:} cue
+(Sec.~\ref{sec:methodology:prompts}); chain-of-thought variants use a
+220-token budget, calibrated for the five non-reasoning models' brief
+prose reasoning. qwen3 is the exception: its native thinking mode can
+reason for far longer than 220 tokens before reaching a decision, so its
+chain-of-thought units use a 1,024-token budget instead, directly
+reflected in its substantially higher per-example latency
+(Sec.~\ref{sec:results:cost}). Generation batch size is 32 for five of the
+six models, calibrated to stay within available GPU memory (zero
+out-of-memory failures observed at that size); qwen3 uses batch size
+128, calibrated the same way for its longer generations
+(fail\_ratio 0.008 at that batch size).
+
+\subsection{Evaluation Metrics}
+\label{sec:experimental:metrics}
+
+We report accuracy and binary precision/recall/F1 with the sexist class as
+positive, computed identically for every (model, variant) unit, baseline,
+and sweep condition. A response is parsed by locating its \emph{last}
+occurrence of an answer marker (\texttt{ANSWER:}, or a residual
+chat-template artifact) and reading the YES/NO token that follows; this
+single rule handles both the prompt-inserted marker of non-chain-of-thought
+variants and the model-produced marker at the end of a chain-of-thought
+response without special-casing either. A response that never reaches an
+unambiguous YES/NO decision (including the deliberately unresolved case
+of both words appearing with no leading marker) is a parse failure; the
+fraction of failures is reported per unit as \texttt{fail\_ratio} and, in
+the headline metrics used throughout this paper, failures default to a
+``not sexist'' prediction. This default is a real cost only when
+\texttt{fail\_ratio} is non-trivial, which is itself informative
+(Sec.~\ref{sec:results:llama-refusal}).

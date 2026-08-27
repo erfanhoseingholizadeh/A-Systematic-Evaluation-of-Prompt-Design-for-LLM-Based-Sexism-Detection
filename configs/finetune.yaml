@@ -1,0 +1,41 @@
+# Fine-tuned baseline settings. Both trained on the EDOS full train split
+# (edos_full.get_split(df, "train")) and scored on the same test set as the
+# prompting variants for direct comparability.
+seed: 42
+
+encoder:
+  model_id: roberta-base
+  num_epochs: 3
+  learning_rate: 2.0e-5
+  batch_size: 64
+  max_length: 128
+  output_dir: ./checkpoints/encoder
+
+qlora:
+  # One QLoRA baseline per prompted model, so every model gets a directly
+  # comparable fine-tuned number alongside its prompting results.
+  model_keys:
+    - mistral
+    - phi3
+    - llama3.1
+    - gemma2
+    - qwen2.5
+    - qwen3
+  # Dev F1 was still improving at epoch 2 with no plateau in sight, so 6
+  # epochs rather than fewer. select_best_qlora_epoch picks the
+  # best-scoring epoch from the saved per-epoch checkpoints rather than
+  # assuming the last one is best, so a slightly-too-long run doesn't cost
+  # anything.
+  num_epochs: 6
+  learning_rate: 2.0e-4
+  # Calibrated against gemma2 (the largest of the six models, worst case
+  # for VRAM) and re-checked for qwen3: throughput plateaus well before
+  # memory usage does, so 16 is the sweet spot with headroom to spare on a
+  # 40GB card. This path doesn't use qwen3's "thinking mode," so the
+  # generation-budget concerns in models.yaml don't apply here.
+  batch_size: 16
+  max_length: 512
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  output_dir: ./checkpoints/qlora

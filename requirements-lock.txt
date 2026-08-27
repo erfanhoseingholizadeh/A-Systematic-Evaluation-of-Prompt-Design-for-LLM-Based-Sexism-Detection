@@ -1,0 +1,30 @@
+# Locked dependencies for the local/dev environment (base + [dev] extras).
+# Generated 2026-08-26 from a clean venv built with `pip install -e ".[dev]"`
+# against pyproject.toml, on Python 3.14.4. Verified against this exact
+# set: 162/162 tests pass, pyflakes clean.
+#
+# This is the full resolved dependency closure (including transitive
+# deps), not just the direct dependencies listed in pyproject.toml.
+# Install with: pip install -r requirements-lock.txt
+#
+# Does NOT cover the GPU/model stack used on the cluster -- see
+# requirements-gpu-lock.txt for that (different Python version, only
+# installable where CUDA is available).
+
+iniconfig==2.3.0
+joblib==1.5.3
+narwhals==2.25.0
+numpy==2.5.2
+packaging==26.3
+pandas==3.0.5
+pluggy==1.6.0
+pyflakes==3.4.0
+Pygments==2.21.0
+pytest==9.1.1
+python-dateutil==2.9.0.post0
+PyYAML==6.0.3
+scikit-learn==1.9.0
+scipy==1.18.1
+six==1.17.0
+threadpoolctl==3.6.0
+tqdm==4.70.0

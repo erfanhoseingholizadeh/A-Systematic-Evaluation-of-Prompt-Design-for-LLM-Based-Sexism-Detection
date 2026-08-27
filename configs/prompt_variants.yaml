@@ -1,0 +1,119 @@
+# The 18 prompt variants (V1-V18): the R/A/C/T/F grid.
+#
+# R = role, A = aspects, C = context, T = chain-of-thought, F = few-shot.
+# Do not reorder/renumber without a reason: results are keyed by variant id.
+#
+# fewshot_num_per_class only applies when fewshot is true; set to 2 (2
+# sexist + 2 non-sexist demonstrations per prompt).
+variants:
+  - id: V1
+    role: false
+    aspects: false
+    context: false
+    cot: false
+    fewshot: false
+  - id: V2
+    role: true
+    aspects: false
+    context: false
+    cot: false
+    fewshot: false
+  - id: V3
+    role: false
+    aspects: true
+    context: false
+    cot: false
+    fewshot: false
+  - id: V4
+    role: false
+    aspects: false
+    context: true
+    cot: false
+    fewshot: false
+  - id: V5
+    role: false
+    aspects: false
+    context: false
+    cot: true
+    fewshot: false
+  - id: V6
+    role: false
+    aspects: false
+    context: false
+    cot: false
+    fewshot: true
+  - id: V7
+    role: true
+    aspects: false
+    context: false
+    cot: false
+    fewshot: true
+  - id: V8
+    role: false
+    aspects: false
+    context: false
+    cot: true
+    fewshot: true
+  - id: V9
+    role: true
+    aspects: true
+    context: false
+    cot: false
+    fewshot: true
+  - id: V10
+    role: true
+    aspects: true
+    context: false
+    cot: true
+    fewshot: false
+  - id: V11
+    role: false
+    aspects: true
+    context: true
+    cot: true
+    fewshot: false
+  - id: V12
+    role: false
+    aspects: true
+    context: false
+    cot: true
+    fewshot: true
+  - id: V13
+    role: true
+    aspects: false
+    context: false
+    cot: true
+    fewshot: true
+  - id: V14
+    role: false
+    aspects: false
+    context: true
+    cot: true
+    fewshot: true
+  - id: V15
+    role: true
+    aspects: false
+    context: true
+    cot: true
+    fewshot: true
+  - id: V16
+    role: true
+    aspects: true
+    context: true
+    cot: true
+    fewshot: false
+  - id: V17
+    role: true
+    aspects: true
+    context: false
+    cot: true
+    fewshot: true
+  - id: V18
+    role: true
+    aspects: true
+    context: true
+    cot: true
+    fewshot: true
+
+fewshot_num_per_class: 2
+fewshot_seed: 42

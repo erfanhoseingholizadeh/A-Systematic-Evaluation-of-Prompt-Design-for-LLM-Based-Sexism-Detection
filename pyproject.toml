@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sexism-prompting"
+version = "0.1.0"
+description = "Reproducible prompt-design study for LLM-based sexism detection (EDOS)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Erfan Hoseingholizadeh" },
+    { name = "Shakiba Mirbagheri" },
+    { name = "Mina Farmanbar" },
+]
+# Direct dependencies are pinned to exact versions verified working
+# (162/162 tests passing, pyflakes clean) as of 2026-08-26. Full
+# transitive-dependency lock files, for byte-identical environment
+# reproduction, live at requirements-lock.txt (this base + dev, local
+# sandbox) and requirements-gpu-lock.txt (base + gpu, the cluster's
+# real, actually-used environment).
+dependencies = [
+    "pandas==3.0.5",
+    "numpy==2.5.2",
+    "PyYAML==6.0.3",
+    "scikit-learn==1.9.0",
+    "tqdm==4.70.0",
+]
+
+[project.optional-dependencies]
+# GPU / model stack, installed on the GPU cluster, not testable in the dev sandbox.
+# Pinned to the exact versions verified working on the cluster (see
+# requirements-gpu-lock.txt); transformers moved from the 4.51.0 minimum
+# originally needed for qwen3 support up to the 5.x line since then.
+gpu = [
+    "torch==2.6.0",
+    "transformers==5.15.1",
+    "accelerate==1.14.0",
+    "bitsandbytes==0.50.1",
+    "peft==0.20.0",
+    "sentencepiece==0.2.2",
+]
+dev = [
+    "pytest==9.1.1",
+    "pyflakes==3.4.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

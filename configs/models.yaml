@@ -1,0 +1,65 @@
+# Model roster and generation settings.
+# Keys must match sexism_prompting.models.MODEL_REGISTRY.
+# Gated (need an accepted HF license + HF_TOKEN): llama3.1, gemma2.
+# qwen3 is the reasoning-tuned 6th model. Its revision is pinned in
+# models.py's MODEL_REGISTRY.
+models:
+  - mistral
+  - phi3
+  - llama3.1
+  - qwen2.5
+  - gemma2
+  - qwen3
+
+# Applied to variants where cot: false (see prompt_variants.yaml): a strict,
+# near-instant YES/NO decision.
+generation:
+  max_new_tokens: 2
+  do_sample: false
+  top_p: 1.0
+  repetition_penalty: 1.0
+
+# Applied to variants where cot: true. 2 tokens cannot reason; this budget
+# gives the model room to think before it emits "ANSWER: YES"/"ANSWER: NO"
+# (see prompts.py module docstring for why the prompt itself changes too).
+generation_cot:
+  max_new_tokens: 220
+  do_sample: false
+  top_p: 1.0
+  repetition_penalty: 1.0
+
+# qwen3's native "thinking mode" can reason for far longer than the
+# 220-token budget calibrated for the other five models' brief prose CoT;
+# without more room its <think> block gets cut off before reaching the
+# required "ANSWER: YES"/"NO" cue.
+generation_cot_overrides:
+  qwen3:
+    max_new_tokens: 1024
+
+batch_size: 32
+
+# Per-model override of batch_size, for a model whose memory footprint is
+# unusually large at the global batch size.
+batch_size_overrides: {}
+
+seed: 42
+
+# A (model, variant) unit whose fail_ratio is at or above this is treated as
+# a generation failure (e.g. CUDA OOM turning whole batches into empty
+# responses) and is not checkpointed; a later run retries it instead of
+# freezing garbage all-"NO" metrics into the grid.
+failure_threshold: 0.5
+
+# Per-unit overrides (key: "<variant_id>__<model_key>", matching
+# RunCheckpoint.unit_id) for (model, variant) pairs whose elevated
+# fail_ratio is a confirmed, stable property of the model rather than a
+# transient failure. llama3.1's chain-of-thought + few-shot variants
+# without aspects framing (V8/V13/V14/V15) reliably decline to answer on
+# safety grounds instead of classifying; accepted as-is (1.0) rather than
+# raising the global threshold and loosening the guard for every other
+# unit.
+failure_threshold_overrides:
+  V8__llama3.1: 1.0
+  V13__llama3.1: 1.0
+  V14__llama3.1: 1.0
+  V15__llama3.1: 1.0

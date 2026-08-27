@@ -1,0 +1,25 @@
+model,best_variant,category,n,false_negatives,fn_rate
+mistral,V7,"1. threats, plans to harm and incitement",89,1,0.0112
+mistral,V7,2. derogation,454,26,0.0573
+mistral,V7,3. animosity,333,49,0.1471
+mistral,V7,4. prejudiced discussions,94,17,0.1809
+phi3,V9,"1. threats, plans to harm and incitement",89,30,0.3371
+phi3,V9,2. derogation,454,136,0.2996
+phi3,V9,3. animosity,333,124,0.3724
+phi3,V9,4. prejudiced discussions,94,52,0.5532
+llama3.1,V6,"1. threats, plans to harm and incitement",89,7,0.0787
+llama3.1,V6,2. derogation,454,29,0.0639
+llama3.1,V6,3. animosity,333,43,0.1291
+llama3.1,V6,4. prejudiced discussions,94,24,0.2553
+qwen2.5,V6,"1. threats, plans to harm and incitement",89,25,0.2809
+qwen2.5,V6,2. derogation,454,64,0.141
+qwen2.5,V6,3. animosity,333,101,0.3033
+qwen2.5,V6,4. prejudiced discussions,94,29,0.3085
+gemma2,V7,"1. threats, plans to harm and incitement",89,2,0.0225
+gemma2,V7,2. derogation,454,7,0.0154
+gemma2,V7,3. animosity,333,16,0.048
+gemma2,V7,4. prejudiced discussions,94,4,0.0426
+qwen3,V8,"1. threats, plans to harm and incitement",89,27,0.3034
+qwen3,V8,2. derogation,454,68,0.1498
+qwen3,V8,3. animosity,333,79,0.2372
+qwen3,V8,4. prejudiced discussions,94,35,0.3723

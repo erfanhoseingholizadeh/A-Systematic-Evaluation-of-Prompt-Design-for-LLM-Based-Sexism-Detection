@@ -1,0 +1,79 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+\title{A Systematic Evaluation of Prompt Design for LLM-Based Sexism
+Detection}
+% Reverted to this paper's original working-placeholder title on
+% 2026-08-26 at the user's explicit request, undoing the 2026-08-25
+% rename to "The Limits of Prompt Engineering for LLM-Based Sexism
+% Detection."
+
+\author{
+\IEEEauthorblockN{Anonymous Author(s)}
+}
+% Anonymized 2026-08-25 for double-blind review submission. Real author
+% list (restore at camera-ready): Erfan Hoseingholizadeh, Shakiba
+% Mirbagheri, Mina Farmanbar.
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Prompt design offers an appealing route to sexism detection with large
+language models: no labeled data, no fine-tuning, and a wide space of
+role, context, and reasoning instructions to choose from. This paper
+tests that route systematically, evaluating a curated grid of 18 prompt
+variants across six open-weight, instruction-tuned models spanning five
+model families and a 3.8--9B parameter range, on the full official EDOS
+sexism-detection test split ($n=4{,}000$). Prompt design produces large,
+statistically real effects: 92 of 101 variant-versus-baseline
+comparisons reach significance under McNemar's test and 88 of 101 under
+a paired F1-diff bootstrap, and the single largest of these tested
+effects comes from prompt design alone.
+But that entire space sits, for five of the six models, below what a
+classical TF-IDF and logistic regression classifier already achieves on
+the same data at a fraction of the computational cost; only one model
+edges past it on F1, at 4--16$\times$ the inference cost of every other
+prompted model, and a separate confidence-based AUC comparison crowns a
+different model instead, not the F1 leader. Reading raw model output rather
+than trusting aggregate scores further revealed that one model's
+chain-of-thought failures split cleanly into two distinct causes,
+explicit safety refusal or reasoning-token-budget exhaustion, depending
+on prompt composition, and that prompt-component order matters far less
+than prior work on few-shot demonstration order would predict. Prompt
+engineering is a real, measurable lever on this task; it is not, on this
+evidence, a substitute for adapting a model to the task's own labeled
+data.
+\end{abstract}
+
+\begin{IEEEkeywords}
+sexism detection, prompt engineering, large language models,
+in-context learning, chain-of-thought prompting, hate speech detection
+\end{IEEEkeywords}
+
+\input{sections/introduction}
+
+\input{sections/related_work}
+
+\input{sections/methodology}
+
+\input{sections/experimental_setup}
+
+\input{sections/results}
+
+\input{sections/discussion}
+
+\input{sections/limitations}
+
+\input{sections/conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

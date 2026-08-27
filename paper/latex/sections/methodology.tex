@@ -1,0 +1,153 @@
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Prompt-Design Space}
+\label{sec:methodology:prompts}
+
+We study five independently toggleable prompt components layered on a
+common base instruction (classify the input text as containing sexism or
+not): a system-level \textbf{role} specification identifying the model as
+a sexism-annotation assistant; a bulleted list of \textbf{aspects}
+(seven linguistic markers associated with sexist language: objectification,
+gender stereotyping, hostile language, benevolent sexism, dehumanization,
+double standards, and dismissiveness); a short \textbf{context} block
+naming the platform, content type, and language; \textbf{chain-of-thought}
+(T) instructions asking the model to reason before answering; and
+\textbf{few-shot} (F) demonstrations.
+
+Rather than the full $2^5{=}32$-cell factorial, we evaluate a curated grid
+of 18 variants (V1--V18): the bare baseline with every component off (V1),
+each component in isolation (V2--V6), and twelve further combinations
+spanning pairwise through five-way interactions, culminating in all five
+components active at once (V18). Table~\ref{tab:main-grid}
+(Sec.~\ref{sec:results:grid}) lists the exact component composition of
+every variant alongside its results, so it is not repeated here.
+
+Active (non-role) components are concatenated into the prompt's user turn
+in a fixed order (context, chain-of-thought, aspects, few-shot) ahead
+of the input text; the role component, when active, is instead injected as
+a separate system-role chat message. Non-chain-of-thought variants append
+an explicit trailing \texttt{ANSWER:} cue immediately before generation,
+forcing an immediate two-token \texttt{YES}/\texttt{NO} decision;
+chain-of-thought variants omit this cue and instead instruct the model to
+reason first and conclude with its own \texttt{ANSWER: YES} /
+\texttt{ANSWER: NO} line, so the forced cue never pre-empts the model's own
+reasoning (Sec.~\ref{sec:experimental:generation} details the corresponding
+generation-budget difference between the two). Few-shot variants sample
+$k{=}2$ demonstrations per class (2 sexist, 2 not-sexist; 4 total),
+seeded ($\text{seed}{=}42$) and drawn without replacement from the EDOS
+training split (Sec.~\ref{sec:experimental:dataset}), formatted as
+\texttt{TEXT}/\texttt{ANSWER} pairs.
+
+\subsection{Model Roster}
+\label{sec:methodology:models}
+
+We evaluate six open-weight, instruction-tuned LLMs spanning five model
+families and a 3.8--9B parameter range (Table~\ref{tab:models}). Every
+model is loaded from a Hugging Face Hub revision pinned to a fixed commit
+hash, so a later upstream update to a repository's default branch cannot
+silently change which weights a rerun evaluates. Two models
+(llama3.1, gemma2) are gated, requiring an accepted Hugging Face license;
+the remaining four are openly accessible. qwen3 is the only reasoning-tuned
+model in the roster: its chat template exposes a runtime
+\texttt{enable\_thinking} toggle, wired to each variant's own
+chain-of-thought flag, giving it genuine extended reasoning on
+chain-of-thought variants rather than the brief prose reasoning the other
+five models produce from instructions alone.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Evaluated model roster. All Hugging Face Hub revisions are
+pinned to a fixed commit (Sec.~\ref{sec:methodology:models}).}
+\label{tab:models}
+\begin{tabular}{lllc}
+\toprule
+Model & Hugging Face ID & Params & Reasoning \\
+\midrule
+mistral   & mistralai/Mistral-7B-Instruct-v0.3 & 7B   & \\
+phi3      & microsoft/Phi-3-mini-4k-instruct   & 3.8B & \\
+llama3.1  & meta-llama/Llama-3.1-8B-Instruct   & 8B   & \\
+qwen2.5   & Qwen/Qwen2.5-7B-Instruct           & 7B   & \\
+gemma2    & google/gemma-2-9b-it               & 9B   & \\
+qwen3     & Qwen/Qwen3-8B                      & 8B   & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Fine-Tuned and Classical Baselines}
+\label{sec:methodology:baselines}
+
+All three baselines below train on the EDOS training split and are scored
+on the same held-out test split as the prompting grid
+(Sec.~\ref{sec:experimental:dataset}), for direct comparability with the
+prompting results (Sec.~\ref{sec:results:baselines}).
+
+\textbf{QLoRA.} For each of the six prompted models we additionally
+fine-tune a QLoRA adapter: 4-bit NF4-quantized frozen base weights (bf16
+compute dtype) with LoRA adapters ($r{=}16$, $\alpha{=}32$, dropout
+$0.05$) targeting the attention projection matrices
+(\texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}).
+Training runs 6 epochs (learning rate $2{\times}10^{-4}$, batch size 16,
+max sequence length 512) on the training split, oversampled to a balanced
+50/50 class ratio before tokenization: the SFT objective (next-token
+prediction on a single \texttt{" YES"}/\texttt{" NO"} completion) has no
+built-in class weighting, and, trained directly on EDOS's natural
+$\sim$76/24 imbalance, collapses to unconditionally predicting the
+majority class. Both the fine-tuning prompt template and completion format
+exactly match variant V1's own zero-component prompt, so the fine-tuned
+model is compared like-for-like against the prompting-only results at
+inference time: same instruction, same input format, only the weights
+differ. We save a per-epoch adapter snapshot and promote the epoch with
+the highest F1 on the EDOS dev split to the one evaluated on the test
+split, mirroring the encoder baseline's own selection criterion below.
+
+\textbf{Encoder.} A \texttt{roberta-base} sequence classifier
+(2 output labels), fine-tuned for 3 epochs (learning rate
+$2{\times}10^{-5}$, batch size 64, max sequence length 128) directly on
+the training split, with the epoch achieving the best dev-split F1
+promoted to the reported test-set number.
+
+\textbf{Classical.} A non-neural baseline: TF-IDF features
+(unigrams and bigrams, minimum document frequency 2, 50,000-feature cap,
+sublinear term-frequency scaling) feeding a logistic regression classifier
+(balanced class weighting to offset EDOS's natural imbalance, up to 1,000
+solver iterations), fit on the same training split.
+
+\subsection{Statistical Testing}
+\label{sec:methodology:stats}
+
+For each model we test every non-baseline variant (V2--V18) against V1
+with two independent, per-model-family-corrected tests: an exact
+McNemar's test on the accuracy-based discordant-pair counts between the
+two variants' predictions, and a paired bootstrap test on the difference
+in F1 (2,000 resamples, percentile confidence interval). Both tests'
+p-values are Holm-corrected within their own family of 17 comparisons per
+model, rather than pooled across the two tests. McNemar and the F1-diff
+bootstrap test the same baseline-vs-variant hypothesis via different
+statistics, so correcting one family with the other's p-values would
+misrepresent the family-wise error control each provides on its own
+(Sec.~\ref{sec:results:significance} discusses a case where the two tests
+disagree).
+
+\subsection{Sensitivity-Sweep Design}
+\label{sec:methodology:sweeps}
+
+Three supplementary robustness checks target each model's own
+best-performing main-grid variant only, not the full grid along a second
+axis, which would be prohibitively expensive: (i) an \textbf{order sweep},
+rerendering that variant's active components under up to 5 distinct,
+seeded random orderings of \{context, chain-of-thought, aspects,
+few-shot\} (deduplicated to distinct induced orders, since an inactive
+component does not affect ordering), holding the active component set
+itself fixed; (ii) a \textbf{few-shot-size sweep}, rerunning the variant
+at $k\in\{1,3,4\}$ demonstrations per class against the grid's own default
+$k{=}2$, for variants where few-shot is active; and (iii) a
+\textbf{demonstration-seed sweep}, redrawing which $k{=}2$-per-class
+demonstrations are sampled under three alternate random seeds (1, 7, 123)
+against the grid's own fixed seed (42), holding both the component order
+and the demonstration count fixed, for variants where few-shot is active.
+All three sweeps reuse the same evaluation engine and generation settings
+as the main grid (Sec.~\ref{sec:experimental:generation});
+Sec.~\ref{sec:results:sensitivity} and
+Sec.~\ref{sec:results:seed-sensitivity} report the results.

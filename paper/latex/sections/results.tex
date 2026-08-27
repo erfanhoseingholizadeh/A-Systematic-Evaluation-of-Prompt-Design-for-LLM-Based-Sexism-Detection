@@ -1,0 +1,582 @@
+\section{Results and Analysis}
+\label{sec:results}
+
+\subsection{Experimental Overview}
+\label{sec:results:overview}
+
+All results below are computed against the full official EDOS test split
+\cite{kirk2023semeval}, $n=4{,}000$, at its real class distribution:
+3{,}030 not-sexist examples (75.75\%) and 970 sexist examples (24.25\%).
+We state this base rate up front because several of the accuracy figures
+reported in this section are only interpretable against it: a
+classifier that predicts ``not sexist'' unconditionally would already
+score 0.758 accuracy by construction.
+
+\subsection{Main Prompt-Design Grid}
+\label{sec:results:grid}
+
+Table~\ref{tab:main-grid} reports F1 for all 18 prompt variants across
+the six evaluated models. Bold marks the best model for a given variant
+(row); underline marks each model's own best-performing variant
+(column).
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\caption{F1 score by prompt variant (V1--V18) and model, full EDOS test
+split ($n=4{,}000$). R = role, A = aspects, C = context, T =
+chain-of-thought, F = few-shot ($k{=}2$ per class). Bold: best model per
+row. Underline: best variant per model (column).
+\textsuperscript{$\dagger$}llama3.1's V14 is omitted: 54.6\% of its
+generations are safety refusals rather than classification attempts
+(Sec.~\ref{sec:results:llama-refusal}). llama3.1's V8, V13, and V15
+cells (F1 0.240, 0.361, 0.360) are reported but carry a related caveat:
+39--49\% of their generations also fail to answer, mostly by the same
+refusal mechanism (Table~\ref{tab:llama-cot}).}
+\label{tab:main-grid}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l ccccc cccccc}
+\toprule
+& \multicolumn{5}{c}{Prompt Features} & \multicolumn{6}{c}{F1 Score} \\
+\cmidrule(lr){2-6} \cmidrule(lr){7-12}
+Variant & R & A & C & T & F & Mistral-7B & Phi-3-mini & Llama-3.1-8B & Qwen2.5-7B & Gemma-2-9B & Qwen3-8B \\
+\midrule
+V1 & -- & -- & -- & -- & -- & 0.467 & 0.138 & 0.441 & \textbf{0.537} & 0.448 & 0.481 \\
+V2 & \checkmark & -- & -- & -- & -- & 0.454 & 0.256 & 0.472 & \textbf{0.535} & 0.444 & 0.483 \\
+V3 & -- & \checkmark & -- & -- & -- & 0.490 & 0.413 & 0.550 & \textbf{0.570} & 0.501 & 0.543 \\
+V4 & -- & -- & \checkmark & -- & -- & 0.453 & 0.056 & 0.466 & \textbf{0.493} & 0.454 & 0.477 \\
+V5 & -- & -- & -- & \checkmark & -- & 0.496 & 0.480 & 0.412 & 0.509 & 0.443 & \textbf{0.553} \\
+V6 & -- & -- & -- & -- & \checkmark & 0.567 & 0.517 & \underline{0.550} & \underline{0.585} & 0.530 & \textbf{0.590} \\
+V7 & \checkmark & -- & -- & -- & \checkmark & \underline{0.567} & 0.533 & 0.519 & 0.583 & \underline{0.530} & \textbf{0.594} \\
+V8 & -- & -- & -- & \checkmark & \checkmark & 0.471 & 0.438 & 0.240 & 0.571 & 0.503 & \underline{\textbf{0.627}} \\
+V9 & \checkmark & \checkmark & -- & -- & \checkmark & 0.559 & \underline{\textbf{0.566}} & 0.471 & 0.559 & 0.514 & 0.562 \\
+V10 & \checkmark & \checkmark & -- & \checkmark & -- & 0.461 & 0.478 & 0.497 & 0.543 & 0.454 & \textbf{0.544} \\
+V11 & -- & \checkmark & \checkmark & \checkmark & -- & 0.483 & 0.466 & 0.508 & 0.556 & 0.471 & \textbf{0.559} \\
+V12 & -- & \checkmark & -- & \checkmark & \checkmark & 0.462 & 0.461 & 0.501 & 0.568 & 0.496 & \textbf{0.602} \\
+V13 & \checkmark & -- & -- & \checkmark & \checkmark & 0.473 & 0.448 & 0.361 & 0.576 & 0.482 & \textbf{0.614} \\
+V14 & -- & -- & \checkmark & \checkmark & \checkmark & 0.447 & 0.461 & \textsuperscript{$\dagger$}-- & 0.571 & 0.500 & \textbf{0.618} \\
+V15 & \checkmark & -- & \checkmark & \checkmark & \checkmark & 0.452 & 0.464 & 0.360 & 0.581 & 0.479 & \textbf{0.618} \\
+V16 & \checkmark & \checkmark & \checkmark & \checkmark & -- & 0.474 & 0.473 & 0.495 & 0.537 & 0.454 & \textbf{0.546} \\
+V17 & \checkmark & \checkmark & -- & \checkmark & \checkmark & 0.440 & 0.486 & 0.470 & 0.556 & 0.485 & \textbf{0.586} \\
+V18 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & 0.439 & 0.489 & 0.494 & 0.572 & 0.477 & \textbf{0.591} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Two patterns hold across all six models. First, the zero-shot baseline
+(V1) is never any model's best variant, and the fullest five-component
+prompt (V18) is not either: for every model, the top score comes from
+a two- or three-component combination that includes few-shot examples.
+Second, model behavior at V1 varies far more than the eventual ceiling
+does: qwen2.5 opens at F1~0.537 with no prompt engineering at all, while
+phi3 opens at F1~0.138, driven by a recall of just 0.082. It flags
+almost nothing as sexist until given role framing, aspect decomposition,
+or examples to work from. Qwen2.5 is the strongest model for every
+V1--V4 (role/aspects/context-only) variant, but qwen3 becomes the
+strongest model for every variant from V5 onward, once chain-of-thought
+or few-shot enters the prompt. Qwen3's own best variant, V8
+(chain-of-thought plus few-shot, F1~0.627), is also the single highest
+score in the entire grid.
+
+\subsection{Qualitative Finding: Safety-Alignment Interference in Llama-3.1-8B}
+\label{sec:results:llama-refusal}
+
+Llama-3.1-8B's V14 (context, chain-of-thought, few-shot; no role or
+aspect framing) is omitted from Table~\ref{tab:main-grid} rather than
+scored: 54.6\% of its 4{,}000 generations do not reach a parseable
+YES/NO decision, reproduced identically across two independent runs
+under this study's deterministic (greedy) decoding. Reading the raw
+generations, these are not truncated or malformed outputs: they are
+explicit safety refusals (e.g., ``I cannot create content that is
+discriminatory or hateful''). Chain-of-thought is the trigger: no
+variant without it shows a meaningful \texttt{fail\_ratio} for this
+model. V14 is the worst single case of a pattern that runs across every
+chain-of-thought variant llama3.1 was evaluated on, detailed below, not
+an isolated one.
+
+Scoring refusals as ``not sexist,'' the standard convention this study
+uses elsewhere, V14 reaches 0.726 accuracy (almost exactly the test
+split's 0.758 not-sexist base rate), with recall collapsing to 0.278
+and F1 at 0.330. Restricted to the 45.4\% of rows the model actually
+answers, F1 recovers to 0.525, in line with llama3.1's better-scoring
+variants (V3 and V6, both F1~0.550). The two views tell different
+stories: the model does not appear worse at the task when it engages,
+but it declines to engage on over half the inputs under this specific
+prompt structure. The answered subset is not a random sample either:
+refusal plausibly correlates with how explicit the source text is. This
+is a finding about llama3.1's safety alignment interacting with prompt
+structure, not a gap in the evaluation; full derivation and the two-run
+reproduction are documented alongside the raw refusal transcripts in the
+project's supplementary material.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{\texttt{fail\_ratio} for llama3.1's ten other chain-of-thought
+variants (none excluded from Table~\ref{tab:main-grid}; all stay below
+the 0.5 exclusion gate). Refusal share is the fraction of a variant's
+failed rows matching an explicit decline pattern (e.g.\ ``I cannot,''
+``not able to''); the remainder are token-budget truncations, not
+declines (see text).}
+\label{tab:llama-cot}
+\begin{tabular}{lcccc}
+\toprule
+Variant & Components & Aspects? & fail\_ratio & Refusal share \\
+\midrule
+V8  & T+F       & --         & 0.491 & 0.98 \\
+V15 & R+C+T+F   & --         & 0.441 & 0.94 \\
+V13 & R+T+F     & --         & 0.395 & 0.90 \\
+V5  & T         & --         & 0.236 & 0.82 \\
+V11 & A+C+T     & \checkmark & 0.214 & 0.31 \\
+V12 & A+T+F     & \checkmark & 0.214 & 0.54 \\
+V17 & R+A+T+F   & \checkmark & 0.171 & 0.63 \\
+V16 & R+A+C+T   & \checkmark & 0.166 & 0.46 \\
+V18 & R+A+C+T+F & \checkmark & 0.146 & 0.32 \\
+V10 & R+A+T     & \checkmark & 0.121 & 0.45 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:llama-cot} reports \texttt{fail\_ratio} for llama3.1's
+ten other chain-of-thought variants. Classifying each variant's failed
+rows by whether they match an explicit refusal pattern reveals two
+distinct causes, not one, and which dominates splits cleanly on whether
+aspects is active. Every variant without aspects is refusal-dominant
+(82--98\% of its failures are explicit declines, averaging around 100
+characters each, matching V14's own transcripts). Every variant with
+aspects is truncation-dominant or close to an even split (31--63\%
+refusal); its non-refusal failures average 1{,}000--1{,}080 characters,
+sitting right at this study's 220-token chain-of-thought budget
+(Sec.~\ref{sec:experimental:generation}), and on inspection consist of
+genuine step-by-step reasoning cut off mid-sentence before reaching a
+decision, not a truncated refusal message. Aspects asks the model to
+work through seven named linguistic markers before answering; for
+llama3.1, that reasoning routinely does not finish inside a token budget
+calibrated for the other five models' shorter prose reasoning. V8
+(\texttt{fail\_ratio} 0.491), V13 (0.395), and V15 (0.441) are the three
+most refusal-affected cells still reported in Table~\ref{tab:main-grid}
+(F1 0.240, 0.361, and 0.360 respectively); their scores carry the same
+caveat as V14's, just below rather than above the exclusion threshold: a
+property of this specific model, worth knowing before comparing its
+numbers to the other five.
+
+\subsection{Statistical Significance of Prompt-Design Effects}
+\label{sec:results:significance}
+
+For each model we test every non-baseline variant against V1 with
+exact McNemar's test (on the discordant-pair counts between the two
+variants' predictions) and a paired bootstrap test on the F1 difference
+(2{,}000 resamples), both Holm-corrected across the model's variants.
+Table~\ref{tab:significance} summarizes the results.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Significance of prompt-design effects vs.\ baseline V1,
+Holm-corrected within each model ($\alpha=0.05$). ``Compared'' excludes
+V1 itself and, for llama3.1, the omitted V14. ``McN.\ sig.''/``F1 sig.''
+are the counts of variants significant under exact McNemar's test and
+the paired F1-diff bootstrap, respectively (Sec.~\ref{sec:methodology:stats}).}
+\label{tab:significance}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+Model & Compared & McN. sig. & F1 sig. & Best var. & Best $\Delta$F1 \\
+\midrule
+Mistral-7B & 17 & 17 & 12 & V7 & +0.100 \\
+Phi-3-mini & 17 & 13 & 17 & V9 & +0.428 \\
+Llama-3.1-8B & 16 & 16 & 16 & V6 & +0.110 \\
+Qwen2.5-7B & 17 & 14 & 14 & V6 & +0.049 \\
+Gemma-2-9B & 17 & 16 & 14 & V7 & +0.082 \\
+Qwen3-8B & 17 & 16 & 15 & V8 & +0.146 \\
+\midrule
+Total & 101 & 92 & 88 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+88 of the 101 variant-vs-baseline comparisons across all six models
+show a significant F1 difference, and 92 of 101 show a significant
+McNemar effect: the large majority of this study's prompt-design choices
+produce a real, statistically distinguishable effect on model behavior,
+not sampling noise. The two tests disagree on a substantial fraction of
+comparisons, in both directions (mistral: 17 McNemar-significant vs.\ 12
+F1-diff-significant; phi3: 13 vs.\ 17). This divergence is expected,
+since the two tests measure different quantities; phi3's V1$\to$V9 jump,
+below, shows why.
+
+Phi-3-mini's V1$\to$V9 jump is the clearest illustration. F1 rises from
+0.138 to 0.566 (+0.428, by far the largest single effect in this study),
+while accuracy moves only from 0.750 to 0.759 and the McNemar test does
+not reach significance after correction ($p_{\text{holm}}=0.695$). The
+reason is arithmetic, not a contradiction between tests: at V1, recall
+is 0.082 and precision 0.421, implying on the order of 80 true positives
+against 110 false positives out of 4{,}000 predictions. At V9, recall
+reaches 0.647 and precision 0.502, implying roughly 628 true positives
+against 622 false positives. The variant gains around 548 correct
+sexist-flags and loses around 512 new false alarms, almost, but not
+exactly, offsetting on a 4{,}000-row test set that is 76\% negative, so
+raw accuracy (and the McNemar test built on it) barely moves. F1, which
+is computed against the 970-row positive class rather than the full
+test set, is not diluted by that majority-class denominator, so it
+reflects the same underlying shift as a large, clearly significant
+change. This is the concrete case for reporting both test families
+rather than collapsing them into one number, and it is the opposite
+pattern from every other model in this study, where McNemar catches
+more significant comparisons than the F1-diff bootstrap does.
+
+\subsection{Comparison Against Fine-Tuned and Classical Baselines}
+\label{sec:results:baselines}
+
+Table~\ref{tab:baselines} places each model's best training-free prompt
+variant against a QLoRA-tuned version of the same model, a single
+TF-IDF plus logistic-regression classifier (no LLM), and a
+fine-tuned RoBERTa-base encoder.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Best training-free prompting vs.\ fine-tuned and classical
+baselines. Classical (TF-IDF + logistic regression): F1 0.617, accuracy
+0.799. Encoder (RoBERTa-base): F1 0.735, accuracy 0.874. $\Delta$
+columns are F1 relative to the classical baseline.}
+\label{tab:baselines}
+\begin{tabular}{lccc}
+\toprule
+Model & Best prompt F1 & QLoRA F1 & $\Delta$ vs.\ classical \\
+\midrule
+Mistral-7B & 0.567 (V7) & 0.788 & $-$0.050 \\
+Phi-3-mini & 0.566 (V9) & 0.734 & $-$0.051 \\
+Llama-3.1-8B & 0.550 (V6) & 0.795 & $-$0.067 \\
+Qwen2.5-7B & 0.585 (V6) & 0.786 & $-$0.032 \\
+Gemma-2-9B & 0.530 (V7) & 0.794 & $-$0.087 \\
+Qwen3-8B & 0.627 (V8) & 0.779 & $+$0.010 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The headline result of this comparison is not favorable to prompting.
+\textbf{Five of the six models' best training-free prompt variant, after
+an 18-point search over prompt design, scores below a bag-of-words
+logistic regression classifier}: a baseline with no language model,
+no GPU, and a fraction of a second of CPU inference per example. Only
+qwen3 edges past it, by F1~+0.010, and even qwen3 loses to it on
+accuracy (0.773 vs.\ 0.799). QLoRA fine-tuning and the RoBERTa encoder
+are in a different tier entirely: every QLoRA-tuned model reaches
+F1~0.734--0.795, and the encoder reaches F1~0.735, both comfortably
+above the classical baseline and far above every prompted number.
+Ranked by F1, the ordering is consistent across the whole study:
+QLoRA~$\approx$~encoder~$\gg$~classical~$>$~training-free prompting,
+with qwen3 as the one partial exception at the classical boundary. This
+is the direct answer to this study's ``no non-LLM baseline'' gap: the
+classical comparison reframes what the prompt-design results in
+Sec.~\ref{sec:results:grid}--\ref{sec:results:significance} mean.
+Prompt engineering produces large, statistically real differences
+\emph{within} the space of training-free approaches, but that entire
+space sits, for five of six models, below what a linear classifier over
+word counts already achieves on this task.
+
+\subsection{Error Analysis by Sexism Subtype}
+\label{sec:results:subtype}
+
+Table~\ref{tab:subtype} breaks down each model's best variant by the
+four fine-grained sexism categories in the EDOS taxonomy
+\cite{kirk2023semeval}, reporting the false-negative rate (share of
+truly sexist examples in that category the model misses) for each.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{False-negative rate by sexism subtype, best variant per model.
+1: threats/plans to harm/incitement ($n=89$). 2: derogation ($n=454$).
+3: animosity ($n=333$). 4: prejudiced discussions ($n=94$).}
+\label{tab:subtype}
+\begin{tabular}{lcccccc}
+\toprule
+Model & Variant & 1 & 2 & 3 & 4 & Mean \\
+\midrule
+Mistral-7B & V7 & 0.011 & 0.057 & 0.147 & 0.181 & 0.099 \\
+Phi-3-mini & V9 & 0.337 & 0.300 & 0.372 & 0.553 & 0.391 \\
+Llama-3.1-8B & V6 & 0.079 & 0.064 & 0.129 & 0.255 & 0.132 \\
+Qwen2.5-7B & V6 & 0.281 & 0.141 & 0.303 & 0.309 & 0.258 \\
+Gemma-2-9B & V7 & 0.022 & 0.015 & 0.048 & 0.043 & 0.032 \\
+Qwen3-8B & V8 & 0.303 & 0.150 & 0.237 & 0.372 & 0.266 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Even at each model's own best variant, subtype-level performance
+diverges far more than the aggregate F1 numbers in
+Table~\ref{tab:main-grid} suggest. Gemma-2-9B misses under 5\% of
+threats and derogation cases; phi3, at its own best variant, still
+misses 55\% of ``prejudiced discussions'' and over a third of every
+other category. Category 4 (prejudiced discussions, the smallest class
+at $n=94$) is the hardest subtype for five of the six models. This
+gap widens sharply when the worst rather than the best variant is
+considered: phi3's worst variant (V4, context-only) misses 96--100\% of
+sexist examples in every subtype, a near-total collapse into
+predicting ``not sexist,'' while gemma2's worst variant (V8) never
+exceeds a 16\% false-negative rate in any subtype. The spread between a
+model's best-case and worst-case prompt is itself a per-model property,
+not a constant: gemma2 is the most robust to a bad prompt choice in this
+study, and phi3 the least.
+
+\subsection{Sensitivity to Prompt-Component Order and Few-Shot Size}
+\label{sec:results:sensitivity}
+
+For each model's best main-grid variant, we re-evaluate under (a) an
+alternate ordering of its prompt components, where the variant has more
+than one component the harness can meaningfully reorder, and (b) an
+alternate few-shot count ($k \in \{1,3,4\}$ per class, against the
+main grid's default $k=2$). Table~\ref{tab:sensitivity} reports each as
+an F1 delta from the main-grid value.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Sensitivity of each model's best variant to component reordering
+and few-shot count, as $\Delta$F1 from the Table~\ref{tab:main-grid}
+value. n/a: variant not eligible for order sweep (see text).}
+\label{tab:sensitivity}
+\begin{tabular}{lcccc}
+\toprule
+Model (variant) & Order & $k{=}1$ & $k{=}3$ & $k{=}4$ \\
+\midrule
+Mistral-7B (V7) & n/a & $-$0.039 & +0.024 & +0.028 \\
+Phi-3-mini (V9) & $-$0.032 & +0.024 & $-$0.019 & $-$0.092 \\
+Llama-3.1-8B (V6) & n/a & +0.023 & $-$0.004 & +0.001 \\
+Qwen2.5-7B (V6) & n/a & $-$0.031 & $-$0.005 & $-$0.002 \\
+Gemma-2-9B (V7) & n/a & $-$0.018 & $-$0.011 & +0.011 \\
+Qwen3-8B (V8) & +0.004 & $-$0.005 & $-$0.008 & +0.018 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Order sensitivity applies only to phi3 (V9: role, aspects, few-shot) and
+qwen3 (V8: chain-of-thought, few-shot). The other four models' best
+variants either combine a single component with few-shot or combine two
+components that render identically regardless of order under this
+study's prompt template, so no meaningful reordering exists to test.
+Where it does apply, the two models diverge sharply: qwen3 is stable
+under reordering ($\Delta=+0.004$), while phi3 loses 0.032 F1 under the
+alternate order, a real, if modest, position effect for this model
+specifically.
+
+The few-shot-size sweep carries a more general caveat. This study's
+main-grid results all use $k=2$ examples per class, but that is not a
+tuned optimum: four of six models score higher F1 at $k=4$ than at the
+$k=2$ default (mistral +0.028, gemma2 +0.011, qwen3 +0.018, llama3.1
++0.001), meaning the headline numbers in Table~\ref{tab:main-grid}
+understate what few-shot prompting can achieve for most of this study's
+models. Phi-3-mini is the exception, and a stark one: F1 falls
+monotonically as $k$ increases past the default, down to $-0.092$ at
+$k=4$, driven by precision rising (0.530$\to$0.670) as recall collapses
+(0.663$\to$0.366). Where the other five models either improve or stay
+roughly flat with more examples, phi3 becomes systematically more
+conservative: the same under-triggering behavior visible in its V1
+baseline (Sec.~\ref{sec:results:grid}) re-emerges as few-shot count
+grows, rather than being fixed by it.
+
+\subsection{Sensitivity to Demonstration Selection}
+\label{sec:results:seed-sensitivity}
+
+The order and size sweeps above vary how the few-shot demonstrations are
+arranged and how many are shown, but never which specific examples are
+drawn: every main-grid variant samples its $k{=}2$-per-class
+demonstrations once, with a fixed seed (42). Table~\ref{tab:seed-sensitivity}
+reruns each model's best variant under three alternate seeds (1, 7, 123),
+reporting the resulting F1 range as a delta from the main-grid value.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Sensitivity of each model's best variant to which few-shot
+demonstrations are drawn: F1 range across 3 alternate seeds (1, 7, 123),
+as $\Delta$F1 from the Table~\ref{tab:main-grid} value (grid's own seed,
+42).}
+\label{tab:seed-sensitivity}
+\begin{tabular}{lcc}
+\toprule
+Model (variant) & Grid F1 & $\Delta$F1 range \\
+\midrule
+Mistral-7B (V7) & 0.567 & $-$0.025 to +0.011 \\
+Phi-3-mini (V9) & 0.566 & $-$0.235 to +0.007 \\
+Llama-3.1-8B (V6) & 0.550 & $-$0.097 to $-$0.028 \\
+Qwen2.5-7B (V6) & 0.585 & $-$0.037 to $-$0.011 \\
+Gemma-2-9B (V7) & 0.530 & $-$0.034 to $-$0.012 \\
+Qwen3-8B (V8) & 0.627 & $-$0.025 to $-$0.003 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Four of six models stay within a narrow, consistently negative range
+(gemma2, qwen2.5, and qwen3 within 0.02--0.04 F1; llama3.1 within
+0.03--0.10 F1): every alternate seed tested scores at or below the main
+grid's own draw. Phi-3-mini is again this study's outlier, and by the
+widest margin observed in any sensitivity check reported here: F1 falls
+from 0.566 to 0.330 under one alternate seed. This is not a parsing
+failure, \texttt{fail\_ratio} is 0 on every seed tested, main grid
+included, but a genuine behavioral shift: precision rises to 0.744 while
+recall collapses to 0.212, the same conservative, under-triggering
+pattern already observed as $k$ grows past the default
+(Sec.~\ref{sec:results:sensitivity}) and in this model's V1 baseline
+(Sec.~\ref{sec:results:grid}), now shown to also depend on which four
+examples happen to be drawn. The main grid's own seed scores at or above
+all three alternate seeds for four of six models (llama3.1, qwen2.5,
+gemma2, qwen3); the two exceptions are mistral, where seeds 1 and 7 each
+score marginally higher (+0.011, +0.002 F1), and phi3, where seed 7
+scores 0.007 F1 higher despite this study's largest sensitivity-sweep
+swing in the opposite direction coming from a different seed on the same
+model. Seed 42 was fixed as an arbitrary default before this sweep was
+run, not chosen for its result, but the pattern means
+Table~\ref{tab:main-grid}'s headline numbers sit, for most models, closer
+to the top than the middle of what a different demonstration draw would
+produce.
+
+\subsection{Computational Cost}
+\label{sec:results:cost}
+
+Table~\ref{tab:cost} reports wall-clock inference cost for the full
+18-variant grid per model, recorded automatically as part of every run.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Inference cost across the full 18-variant grid, per model.}
+\label{tab:cost}
+\begin{tabular}{lccc}
+\toprule
+Model & Total (h) & Mean (s/ex.) & Slowest variant \\
+\midrule
+Mistral-7B & 3.92 & 0.196 & V10, 25.9 min \\
+Phi-3-mini & 3.19 & 0.160 & V12, 24.0 min \\
+Llama-3.1-8B & 4.71 & 0.249 & V18, 31.5 min \\
+Qwen2.5-7B & 1.51 & 0.075 & V11, 14.0 min \\
+Gemma-2-9B & 6.26 & 0.313 & V18, 38.5 min \\
+Qwen3-8B & 23.92 & 1.196 & V18, 146.8 min \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Qwen3-8B is an outlier by a wide margin: its full grid takes roughly
+5--16$\times$ longer than any other model's, and its mean per-example
+cost (1.196s) is 4--16$\times$ every other model's. This is a direct
+consequence of its native reasoning mode, which this study leaves
+enabled for chain-of-thought variants rather than capping its token
+budget to match the other five models. Qwen3 is also this study's
+best-performing model overall (Table~\ref{tab:main-grid},
+\ref{tab:significance}); that performance is not free, and the
+accuracy/cost trade-off it represents is a separate question from
+whether it is the strongest model on accuracy alone.
+
+\subsection{Confidence-Based AUC: A Second Comparison Against the Classical Baseline}
+\label{sec:results:auc}
+
+For the seven non-chain-of-thought variants (V1--V4, V6, V7, V9), the
+model's decision is its first generated token, so a calibrated
+P(sexist) score can be read directly off that token's YES/NO logits,
+softmax-normalized between the two candidates, without generating
+anything further. Chain-of-thought variants are excluded: their
+decision only emerges after free-form reasoning, so no single generated
+token stands in for it. We extract this score for all six models across
+the full 4,000-example test split and score it against the true labels
+with ROC-AUC. As a validity check, the confidence-implied call
+(P(sexist) $\geq$ 0.5) agrees with the model's actual generated decision
+on 94.5--99.7\% of rows for every model's variant in
+Table~\ref{tab:auc}, confirming the first-token assumption holds on
+real output, not only by construction.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{AUC from first-token P(sexist), best non-chain-of-thought
+variant per model. Classical baseline (TF-IDF + logistic regression,
+\texttt{predict\_proba}): AUC 0.848. $\Delta$ is AUC relative to the
+classical baseline. \textsuperscript{$\dagger$}Qwen3-8B's true best
+variant, V8 (F1 0.627, Table~\ref{tab:baselines}), is chain-of-thought
+and has no single decision token this method can score; V7 is its best
+scorable stand-in, not its true best variant.}
+\label{tab:auc}
+\begin{tabular}{lcccc}
+\toprule
+Model & Variant & F1 & AUC & $\Delta$ vs.\ classical \\
+\midrule
+Mistral-7B & V7 & 0.567 & 0.843 & $-$0.005 \\
+Phi-3-mini & V9 & 0.566 & 0.810 & $-$0.038 \\
+Llama-3.1-8B & V6 & 0.550 & 0.832 & $-$0.016 \\
+Qwen2.5-7B & V6 & 0.585 & 0.812 & $-$0.036 \\
+Gemma-2-9B & V7 & 0.530 & 0.875 & $+$0.027 \\
+Qwen3-8B\textsuperscript{$\dagger$} & V7 & 0.594 & 0.838 & $-$0.010 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:auc} complicates the story in Table~\ref{tab:baselines}
+rather than repeating it. On F1, qwen3 is the only model to beat the
+classical baseline, and it does so with V8, a chain-of-thought variant
+this AUC method cannot score at all. On AUC, qwen3's best scorable
+variant loses to the classical baseline (0.838 vs.\ 0.848), while
+gemma2, whose F1 (0.530) trails the classical baseline by the widest
+margin in this study, is the only model whose AUC (0.875) beats it.
+Which model, if any, ``beats'' the classical baseline depends on which
+metric answers the question. Training-free prompting still fails to
+consistently clear the classical baseline under either metric; the
+exception to that just changes identity depending on which metric is
+used.
+
+\subsection{Confidence-Based Abstention: Trading Coverage for Precision}
+\label{sec:results:abstention}
+
+The same first-token P(sexist) score behind Table~\ref{tab:auc} also
+supports a simple abstention policy: instead of forcing a decision on
+every example, withhold a prediction whenever the score falls within a
+symmetric band around the 0.5 decision boundary, deferring the closest
+calls rather than answering them. For each model's Table~\ref{tab:auc}
+variant, Table~\ref{tab:abstention} reports the resulting coverage (the
+fraction of the test split still answered) and F1 on that covered subset
+at a $\pm0.2$ band, against the same variant's full-coverage F1
+(band$=$0) for reference.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\caption{Confidence-based abstention at a $\pm0.2$ band around
+P(sexist)$=$0.5, same variant per model as Table~\ref{tab:auc}. Coverage
+is the fraction of the 4{,}000-example test split still answered after
+abstention; F1 is computed on that covered subset only; $\Delta$F1 is
+relative to the same variant's full-coverage (no-abstention) F1.}
+\label{tab:abstention}
+\begin{tabular}{lcccc}
+\toprule
+Model & Variant & Coverage & F1 & $\Delta$F1 \\
+\midrule
+Mistral-7B & V7 & 0.941 & 0.585 & $+$0.015 \\
+Phi-3-mini & V9 & 0.628 & 0.691 & $+$0.109 \\
+Llama-3.1-8B & V6 & 0.809 & 0.601 & $+$0.049 \\
+Qwen2.5-7B & V6 & 0.971 & 0.593 & $+$0.007 \\
+Gemma-2-9B & V7 & 0.959 & 0.541 & $+$0.011 \\
+Qwen3-8B & V7 & 0.962 & 0.602 & $+$0.008 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+F1 improves for every model at this band. Beyond being calibrated in
+aggregate (Table~\ref{tab:auc}), the confidence score tracks
+per-example difficulty: the examples it flags as uncertain really are,
+on average, more error-prone. The size of that improvement, and the
+coverage it costs to get it, is not uniform. Phi-3-mini gains the most
+($+$0.109 F1) but only by abstaining on 37\% of the test split (coverage
+0.628), a policy this study's other five models never need to reach a
+comparable gain: mistral, gemma2, qwen2.5, and qwen3 all retain over
+94\% coverage at the same band while gaining under 0.02 F1. Llama-3.1-8B
+falls between the two patterns ($+$0.049 F1 at 81\% coverage). This
+mirrors a pattern already visible elsewhere in this study: phi3's errors
+are not spread evenly across the test set but concentrated in a
+recoverable subset (Sec.~\ref{sec:results:sensitivity},
+Sec.~\ref{sec:results:seed-sensitivity}, and
+Sec.~\ref{sec:results:subtype} all single out phi3 as an outlier among
+the six models), and abstention is one more lens that finds the same
+thing. As with Table~\ref{tab:auc}, this policy is evaluated only on the
+seven non-chain-of-thought variants; whether the same abstention gain
+holds for chain-of-thought variants, where no single token yields a
+confidence score, is untested by this method.

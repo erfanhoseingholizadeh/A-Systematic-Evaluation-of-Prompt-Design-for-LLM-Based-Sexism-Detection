@@ -1,0 +1,120 @@
+\section{Limitations}
+\label{sec:limitations}
+
+This study covers a single dataset, language, and pair of source
+platforms: EDOS's English-language Reddit and Gab posts
+\cite{kirk2023semeval}. Sexist language is expressed differently across
+languages and platforms (Sec.~\ref{sec:related:datasets} discusses SWSR
+\cite{jiang2021swsr}, the closest non-English counterpart), so nothing
+here establishes that the same prompt-design effects, the same baseline
+gap, or the same safety-refusal pattern would reproduce on a different
+dataset. The study also targets only EDOS's binary sexist/not-sexist
+subtask directly; the dataset's finer four-category taxonomy is used
+solely for the post-hoc subtype error analysis
+(Sec.~\ref{sec:results:subtype}), never as a training or prediction
+target in its own right.
+
+The prompt-design grid is a curated 18 of 32 possible component
+combinations (Sec.~\ref{sec:methodology:prompts}), not an exhaustive
+search, and every component's wording is hand-designed rather than
+automatically optimized or drawn from a cited theoretical taxonomy; this
+includes the \textbf{aspects} component's seven linguistic markers, which
+reflect our own judgment of what sexist language looks like rather
+than an established sociolinguistic framework. A negative result
+within this space, most
+prompted variants scoring below the classical baseline, is evidence
+about the designs actually tested, not proof that no possible prompt
+formulation could close the gap. Similarly, the few-shot demonstrations
+for every main-grid variant are drawn once, with a fixed seed, from the
+training split. Sec.~\ref{sec:methodology:sweeps}'s order, count, and
+demonstration-seed sweeps test how sensitive each model's own best
+variant is to arrangement, count, and which specific examples are drawn,
+respectively (Sec.~\ref{sec:results:sensitivity},
+Sec.~\ref{sec:results:seed-sensitivity}), but only for that one variant
+per model, not the full grid; the seed sweep itself covers three
+alternate draws per model, enough to surface phi3's large,
+model-specific sensitivity to selection, but not an exhaustive
+characterization of the selection space.
+
+The model roster is six open-weight, instruction-tuned models in a
+3.8--9B parameter range (Table~\ref{tab:models}). No larger open model
+and no closed, commercial API model, the kind increasingly used in
+production moderation systems, is evaluated, so neither the
+prompt-design findings nor the baseline comparison necessarily extend to
+that different and increasingly common deployment setting. Every
+inference-cost figure in this study (Table~\ref{tab:cost}) is specific
+to this study's own hardware and batching choices;
+the direction of the cost argument in
+Sec.~\ref{sec:discussion:qwen3-cost}, that qwen3's win over the
+classical baseline is expensive, is likely to hold generally, but its
+exact multiplier is not.
+
+This study compares against a classical machine-learning baseline and
+two fine-tuned neural baselines, but not against human inter-annotator
+agreement on the same test items. Without that reference point, it is
+not possible to say how close, or how far, any of this study's numbers
+sit from whatever ceiling human disagreement on sexism labeling itself
+imposes.
+
+Sec.~\ref{sec:results:llama-refusal} and Table~\ref{tab:llama-cot} show
+that llama3.1's elevated \texttt{fail\_ratio} on chain-of-thought
+variants splits into two distinct causes depending on whether aspects is
+active: explicit safety refusal when it is not, and token-budget
+truncation, the model's own step-by-step reasoning running past this
+study's fixed 220-token chain-of-thought budget, when it is. That budget
+was calibrated for ``brief prose reasoning'' across the five
+non-reasoning models generally
+(Sec.~\ref{sec:experimental:generation}); it is demonstrably too short
+for at least this one model under at least this one prompt
+configuration. Whether the same refusal mechanism, at any scale,
+generalizes to the other five models has since been checked
+systematically rather than spot-checked: every chain-of-thought cell
+with at least one failure across mistral, phi3, qwen2.5, gemma2, and
+qwen3 (47 cells) was classified by the same refusal-pattern rule used
+for Table~\ref{tab:llama-cot}, reading explicit-refusal
+\emph{prevalence} as a share of the full 4{,}000-example test split
+rather than a share of each cell's own failures, since the two can
+diverge sharply when \texttt{fail\_ratio} itself is small. On that
+measure, explicit refusal never exceeds 1.05\% of the test split for any
+of the five (phi3's V13, the highest rate observed outside llama3.1;
+mistral peaks at 0.30\%, gemma2 at 0.23\%, qwen3 at 0.15\%, and qwen2.5
+shows none). Every one of llama3.1's own ten other chain-of-thought
+cells sits well above that entire range, from 4.82\% at its lowest to
+48.1\% at V8. Llama3.1's safety-refusal interference
+(Sec.~\ref{sec:results:llama-refusal}) is, on this evidence, a property
+of that model specifically, not a shared chain-of-thought failure mode
+this study's prompt design triggers generally.
+
+Sec.~\ref{sec:results:auc}'s AUC comparison, and
+Sec.~\ref{sec:results:abstention}'s confidence-based abstention policy
+built on the same score, both cover only the seven non-chain-of-thought
+variants. The eleven chain-of-thought variants, including qwen3's own
+best-F1 variant (V8), have no single decision token this method can
+score, so neither AUC nor an abstention gain exists for them at all. The
+abstention gain itself is also not free or uniform: Sec.~\ref{sec:results:abstention}
+shows one model (phi3) buying a large F1 improvement only by abstaining
+on over a third of the test split, while four of the other five models
+gain comparatively little at a much smaller coverage cost, so the same
+band width does not represent the same real-world tradeoff across
+models.
+
+Generation throughout this study is greedy and seeded, which removes
+sampling randomness but not every source of nondeterminism: kernel-level
+differences across GPU architectures, driver versions, and library
+versions can still produce different outputs from bit-identical inputs
+on different hardware. Each of five models' best variant was rerun on two cluster
+nodes with the same GPU architecture (GA100, compute capability 8.0) but
+different memory configurations, a 40GB-per-card node and an
+80GB-per-card node: every one of 4{,}000 test examples produced
+byte-identical raw output and an identical parsed decision on both
+nodes, for all five models, confirming this study's pipeline is
+bit-for-bit deterministic across nodes and memory configurations within
+one GPU architecture. The two-run reproduction of llama3.1's V14 refusal
+rate (Sec.~\ref{sec:results:llama-refusal}) is a special case of the
+same result. qwen3, whose batch-128 footprint does not fit the 40GB
+node's cards, was instead rerun on the 80GB node's A100 cards, again
+matching Table~\ref{tab:main-grid}'s own V8 figure exactly. What this
+study can report is strong, directly tested evidence for bit-identical
+determinism across nodes and memory configurations within one GPU
+architecture; whether the same holds across different GPU architectures
+remains untested.

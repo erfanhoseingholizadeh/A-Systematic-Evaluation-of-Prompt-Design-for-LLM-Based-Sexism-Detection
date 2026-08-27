@@ -1,0 +1,27 @@
+# Cluster-only generation batch sizes for scripts/run_on_cluster.py.
+# Separate from models.yaml's batch_size/batch_size_overrides: those apply
+# to the default (non-cluster) pipeline, which never batches on GPU the
+# way cluster_setup.load_one_for_cluster does.
+#
+# qwen3 benchmarked at batch=128: best throughput/memory tradeoff (256
+# roughly doubles peak VRAM for almost no extra speed). The other five
+# models run fine at the global default of 32, no per-model override
+# needed. Accuracy was checked stable across batch size on a held-out
+# sample, so this is purely a throughput/memory choice.
+batch_size: 32
+batch_size_overrides:
+  qwen3: 128
+
+# bf16 only, no 4-bit quantization: measured no wall-clock benefit from
+# quantizing on this hardware, and every model in the roster comfortably
+# fits in bf16 on a 40GB+ card.
+quantize: false
+
+# Cluster-scoped failure_threshold/failure_threshold_overrides, read by
+# scripts/run_on_cluster.py from this file rather than configs/models.yaml.
+# Left empty rather than copied from models.yaml's llama3.1 overrides:
+# that pattern was confirmed on different hardware and hasn't been
+# re-verified on this stack, so the global 0.5 threshold applies until it
+# is.
+failure_threshold: 0.5
+failure_threshold_overrides: {}
