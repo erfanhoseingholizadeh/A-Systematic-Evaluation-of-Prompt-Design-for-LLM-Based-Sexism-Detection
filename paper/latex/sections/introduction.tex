@@ -1,20 +1,19 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Online sexism is widespread, and automated detection is one of the tools
-platforms and researchers use to make identifying it tractable at scale
-\cite{kirk2023semeval}. The Explainable Detection of Online Sexism
-(EDOS) benchmark, which this paper evaluates against throughout, was
-built specifically to move that detection effort past a coarse
-sexist/not-sexist label toward a fine-grained taxonomy of how sexism
-shows up in text. Most computational work on EDOS, and on hate speech
-detection more broadly, still relies on fine-tuning a model on labeled
-examples. Instruction-tuned large language models offer a different
-route: Brown et al.~\cite{brown2020gpt3} showed that a sufficiently
-capable model can perform a new task from a natural-language description
-and a handful of demonstrations, with no weight update at all, which
-makes prompting an attractive option whenever labeled data, compute, or
-both are scarce.
+Online sexism is widespread, and automated detection is one of the
+tools platforms and researchers use to make identifying it tractable at
+scale \cite{kirk2023semeval}. The Explainable Detection of Online
+Sexism (EDOS) benchmark, evaluated throughout this paper, was built to
+move that detection effort past a coarse sexist/not-sexist label toward
+a fine-grained taxonomy of how sexism shows up in text. Most
+computational work on EDOS, and on hate speech detection more broadly,
+still relies on fine-tuning a model on labeled examples.
+Instruction-tuned large language models offer a different route: Brown
+et al.~\cite{brown2020gpt3} showed that a sufficiently capable model
+can perform a new task from a natural-language description and a
+handful of demonstrations, with no weight update at all. That makes
+prompting attractive whenever labeled data or compute is scarce.
 
 That option comes with its own open question: which prompt does the
 job. A prompt for sexism detection can assign the model a role, define
@@ -29,39 +28,31 @@ far come from single models evaluated on a narrow slice of that design
 space, without a non-LLM baseline or formal significance testing to say
 whether an apparent improvement is real.
 
-This paper closes that gap directly. We evaluate a curated grid of 18
-prompt variants, combining five independently toggleable components
-(role, aspects, context, chain-of-thought, and few-shot demonstrations)
-in isolation and in combination, across six open-weight, instruction-tuned
-models spanning five model families and a 3.8--9B parameter range, on the
-full official EDOS test split. Every variant's effect against a
+This paper closes that gap directly: a curated grid of 18 prompt
+variants, combining five independently toggleable components (role,
+aspects, context, chain-of-thought, and few-shot demonstrations) in
+isolation and in combination, across six open-weight, instruction-tuned
+models spanning five model families and a 3.8--9B parameter range, on
+the full official EDOS test split. Every variant's effect against a
 zero-component baseline is tested for statistical significance with two
 independent tests, and every model's best training-free variant is
-compared directly against a QLoRA-tuned version of the same model, a
-fine-tuned encoder, and a classical TF-IDF and logistic regression
-baseline trained on the same data. We further break results down by
-sexism subtype and test three robustness axes prior work has not applied
-to this task: the order in which prompt components appear, the number of
-few-shot demonstrations shown, and which specific demonstrations are
-drawn.
+compared against a QLoRA-tuned version, a fine-tuned encoder, and a
+classical TF-IDF and logistic regression baseline, all trained on the
+same data. Results are further broken down by sexism subtype and tested
+along three robustness axes prior work has not applied to this task:
+prompt-component order, few-shot count, and which specific
+demonstrations are drawn.
 
 The results argue for a narrower and more specific claim than either
 ``prompt design matters'' or ``LLMs solve sexism detection'' taken
-alone. Prompt design does produce large, statistically real effects
-within training-free prompting: the large majority of this study's
-variant comparisons reach significance under each of two independent
-tests, and the single largest effect among this study's
-significance-tested comparisons comes from prompt design alone. But
-that entire space sits, for five of the six evaluated models, below
-what a linear classifier trained on the same labeled data already
-achieves, at a fraction of the computational cost; only one model
-clears that bar on F1, at a steep compute premium, and a separate
-confidence-based AUC comparison crowns a different model instead.
-Along the way, reading raw model output rather than trusting aggregate
-scores surfaced a chain-of-thought-triggered failure mode in one model
-that splits cleanly into two distinct causes depending on prompt
-composition, and showed that prompt-component order, unlike few-shot
-demonstration order in prior work, has a comparatively narrow effect on
-these models' behavior. Sec.~\ref{sec:limitations} and
-Sec.~\ref{sec:conclusion} address how far these findings generalize
+alone: prompt design produces large, statistically real effects within
+training-free prompting, but that entire space sits, for five of the
+six evaluated models, below what a linear classifier trained on the
+same labeled data already achieves, at a fraction of the computational
+cost (Sec.~\ref{sec:results}). Reading raw model output rather than
+trusting aggregate scores also surfaced a chain-of-thought-triggered
+failure mode with two distinct causes, and showed that prompt-component
+order matters far less than prior few-shot-demonstration-order work
+would predict (Sec.~\ref{sec:discussion}). Sec.~\ref{sec:limitations}
+and Sec.~\ref{sec:conclusion} address how far these findings generalize
 beyond the setting tested here.

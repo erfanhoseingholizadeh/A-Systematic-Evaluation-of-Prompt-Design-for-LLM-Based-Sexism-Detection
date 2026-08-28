@@ -4,20 +4,19 @@
 \subsection{Sexism and Hate Speech Detection Datasets}
 \label{sec:related:datasets}
 
-The EDOS dataset \cite{kirk2023semeval} evaluated throughout this paper was
-built for SemEval-2023 Task 10, which split sexism detection into three
-subtasks of increasing granularity: a binary sexist/not-sexist label, a
-four-category classification of sexist content, and an eleven-vector
-fine-grained taxonomy. Most published EDOS work addresses these subtasks by
-fine-tuning a pretrained encoder on the training split, the same strategy
-this paper's own encoder baseline
-(Sec.~\ref{sec:methodology:baselines}) follows: shared-task submissions
-ranged from BERT-based classifiers \cite{rifat2023acsmkrhr} to conventional
-machine learning pipelines built on hand-engineered features
-\cite{panwar2023edos}, the latter close in spirit to the TF-IDF baseline
-used here. Where an LLM appears at all in this literature, it is typically
-one comparison point among several fine-tuned models, not the object of a
-systematic prompt-design study.
+The EDOS dataset \cite{kirk2023semeval} evaluated throughout this paper
+was built for SemEval-2023 Task 10, splitting sexism detection into
+three subtasks of increasing granularity: a binary sexist/not-sexist
+label, a four-category classification, and an eleven-vector
+fine-grained taxonomy. Most published EDOS work fine-tunes a pretrained
+encoder on the training split, the same strategy this paper's own
+encoder baseline (Sec.~\ref{sec:methodology:baselines}) follows:
+shared-task submissions ranged from BERT-based classifiers
+\cite{rifat2023acsmkrhr} to conventional machine learning pipelines on
+hand-engineered features \cite{panwar2023edos}, the latter close in
+spirit to the TF-IDF baseline used here. Where an LLM appears at all in
+this literature, it is typically one comparison point among several
+fine-tuned models, not the object of a systematic prompt-design study.
 
 Sexism-specific datasets remain comparatively rare outside English. SWSR
 \cite{jiang2021swsr} is, to our knowledge, the only comparably scaled
@@ -25,9 +24,7 @@ non-English sexism dataset built with its own dedicated lexicon, drawn from
 Sina Weibo rather than the Reddit and Gab sources behind EDOS. Its
 existence is a reminder that the platform and language choices behind EDOS
 are not incidental: what counts as sexist language, and how directly it
-gets stated, varies with both. This study inherits EDOS's English,
-Reddit/Gab-sourced scope rather than testing across languages or
-platforms, a scope limitation the paper's closing sections return to.
+gets stated, varies with both.
 
 \subsection{Prompt Engineering and In-Context Learning}
 \label{sec:related:prompting}
@@ -59,34 +56,27 @@ near-state-of-the-art to near-random accuracy on standard classification
 benchmarks, with no change to which demonstrations are shown. The order
 sweep in this paper (Sec.~\ref{sec:methodology:sweeps}) asks a related but
 distinct question: not the order of demonstrations within a fixed prompt,
-but the order of entire prompt components (context, chain-of-thought,
-aspects, few-shot) relative to each other. The effect is far more
-contained than Lu et al.'s general finding: reordering shifts F1 for only
-one of six models (Sec.~\ref{sec:results:sensitivity}), suggesting
-component-order sensitivity is not a universal property of these models
-the way demonstration-order sensitivity appears to be.
+but the order of entire prompt components relative to each other
+(Sec.~\ref{sec:discussion:prompt-effects} compares the results directly).
 
 \subsection{Large Language Models for Hate Speech and Content Moderation}
 \label{sec:related:llm-moderation}
 
 The finding closest in spirit to this paper's own baseline comparison
 (Sec.~\ref{sec:results:baselines}) comes from Plaza-del-Arco et al.
-\cite{plazadelarco2023label}, who ran several LLMs zero-shot across a
-range of text classification tasks and reported that none of them rivaled
-even simple supervised baselines. This paper reaches a similar conclusion
-by a different route: an 18-variant grid of systematically combined
-prompt components per model, rather than zero-shot prompting alone, so
-the gap to a linear classifier persists after substantial prompt
+\cite{plazadelarco2023label}, who ran several LLMs zero-shot across text
+classification tasks and found none rivaled simple supervised baselines.
+This paper reaches a similar conclusion by a different route: an
+18-variant grid of systematically combined prompt components, rather
+than zero-shot alone, so the gap persists after substantial prompt
 engineering, not only in its absence. A comparable pattern shows up in
-hate speech detection specifically. Bernal-Beltr\'an et al.
-\cite{bernalbeltran2025spanish} compared fine-tuned Spanish encoders
-against zero- and few-shot LLM prompting on a hate speech corpus and found
-the fine-tuned encoders consistently ahead, with few-shot prompting
-narrowing but not closing the gap. Neither study applies the statistical
-significance testing or the multi-model breadth used here
-(Sec.~\ref{sec:methodology:stats}), but both point the same direction:
-for classification tasks like these, a general-purpose LLM's prompting
-still lags a model trained on the task's own labels.
+hate speech detection: Bernal-Beltr\'an et al.
+\cite{bernalbeltran2025spanish} found fine-tuned Spanish encoders
+consistently ahead of zero- and few-shot LLM prompting, which narrows
+but does not close the gap. Neither applies this study's statistical
+testing or multi-model breadth (Sec.~\ref{sec:methodology:stats}), but
+both point the same direction: a general-purpose LLM's prompting still
+lags a model trained on the task's own labels.
 
 Safety alignment introduces a failure mode distinct from accuracy.
 R\"ottger et al.'s XSTest \cite{rottger2023xstest} is a purpose-built,
@@ -94,12 +84,10 @@ adversarial suite of safe-sounding prompts designed to trigger unwarranted
 refusals, and it shows the phenomenon exists in several production models.
 The llama3.1 refusal behavior documented in this paper
 (Sec.~\ref{sec:results:llama-refusal}) was not sought out through an
-adversarial test suite; it surfaced as a byproduct of ordinary sexism
-classification once role and aspect framing were dropped from the prompt,
-on genuinely sexist and non-sexist text rather than deliberately
-borderline phrasing. It is a naturally occurring instance of the same
-over-refusal phenomenon XSTest was built to probe, arising from an
-ordinary classification pipeline rather than a red-teaming exercise.
+adversarial test suite: it surfaced as a byproduct of ordinary sexism
+classification, once role and aspect framing were dropped from the
+prompt, on genuinely sexist and non-sexist text rather than deliberately
+borderline phrasing.
 
 \subsection{Fine-Tuned Baselines: Encoders and Parameter-Efficient
 Adaptation}
@@ -111,11 +99,11 @@ The encoder baseline in this study
 training recipe left real performance on the table, shows that a
 fine-tuning baseline's strength depends on training choices as much as
 architecture. The QLoRA baseline builds on two more recent ideas: LoRA
-\cite{hu2021lora}, which adapts a frozen model by training a small pair of
-low-rank matrices injected into its attention layers instead of updating
-all its weights, and QLoRA \cite{dettmers2023qlora}, which quantizes the
-frozen base weights to 4 bits so the same adaptation fits on a single GPU
-even for a multi-billion-parameter model. Together they make it practical
-to fine-tune all six of this paper's prompted models rather than only the
+\cite{hu2021lora}, which adapts a frozen model via small low-rank weight
+updates instead of retraining all its weights, and QLoRA
+\cite{dettmers2023qlora}, which quantizes the frozen base weights to 4
+bits so the adaptation fits on a single GPU even for a
+multi-billion-parameter model. Together they make it practical to
+fine-tune all six of this paper's prompted models rather than only the
 smallest, which is what makes the QLoRA-versus-prompting comparison in
 Sec.~\ref{sec:results:baselines} possible at this scale.

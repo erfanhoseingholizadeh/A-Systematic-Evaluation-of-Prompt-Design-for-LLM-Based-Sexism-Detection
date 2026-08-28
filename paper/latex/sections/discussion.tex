@@ -12,25 +12,22 @@ significance tests measure. Fine-tuning was never put through the same
 tests, but for this same model the QLoRA gain is larger still: F1 0.734
 against V1's 0.138 (Table~\ref{tab:baselines}), a +0.596 improvement.
 Prompt design's effect is large by the standards of training-free
-methods; whether it is large by the standards of adapting the model's
-own weights is a separate, smaller claim, and the baseline comparison
-(Sec.~\ref{sec:results:baselines}) answers it: those effects operate
-entirely within a space that, for five of six models, tops out below a
-linear classifier trained on the same 14{,}000 examples in a fraction of
-a second on a CPU. Prompt design is a real lever on this task, but it is
-attached to a ceiling that a much simpler method already clears.
+methods; whether it is also large against adapting the model's own
+weights is answered by the baseline comparison
+(Sec.~\ref{sec:results:baselines}): those effects operate entirely
+within a space that, for five of six models, tops out below a linear
+classifier trained on the same 14{,}000 examples in a fraction of a
+second on a CPU. Prompt design is a real lever on this task, but it is
+attached to a ceiling a much simpler method already clears.
 
-That ceiling moves, too. The few-shot-size sweep
-(Sec.~\ref{sec:results:sensitivity}) shows four of six models score
-higher at $k=4$ than the main grid's own $k=2$ default, so
-Table~\ref{tab:main-grid} understates each model's real training-free
-ceiling. Recomputing the baseline gap at each model's best available $k$
-does not close it: mistral moves from $-0.050$ to $-0.022$ relative to
-classical, gemma2 from $-0.087$ to $-0.076$, llama3.1 from $-0.067$ to
-$-0.066$, all still below the classical baseline, while qwen3, already
-ahead at $k=2$, extends its lead to $+0.028$. The direction of the
-honest-limits finding survives its own most favorable adjustment; only
-its margin moves.
+That ceiling moves, too: four of six models score higher at $k=4$ than
+the main grid's own $k=2$ default (Sec.~\ref{sec:results:sensitivity}),
+so Table~\ref{tab:main-grid} understates each model's real ceiling.
+Recomputing the baseline gap at each model's best available $k$ does not
+close it (mistral $-0.050\to-0.022$; gemma2 $-0.087\to-0.076$; llama3.1
+$-0.067\to-0.066$, all still below classical; qwen3, already ahead,
+extends its lead to $+0.028$): the honest-limits finding survives its
+own most favorable adjustment, only its margin moves.
 
 One axis mattered less than prior in-context-learning work on other
 tasks would predict. Lu et al.~\cite{lu2022fantastically} found that
@@ -49,60 +46,45 @@ matters, not primarily what order to put them in.
 qwen3 is the sole model whose best training-free prompt beats the
 classical baseline on F1, and the paper's own framing needs to be honest
 about what that win costs. Table~\ref{tab:cost} shows qwen3's full grid
-running 5--16$\times$ longer than any other model's, driven by its native
-reasoning mode left unconstrained on chain-of-thought variants
-(Sec.~\ref{sec:experimental:generation}). Its margin over the classical
-baseline is $+0.010$ F1; the classical baseline itself runs in a fraction
-of a second per example with no GPU at all. A $+0.010$ F1 gain purchased
-at 4--16$\times$ the inference cost of every other prompted model, and
-still behind the classical baseline on accuracy (0.773 vs.\ 0.799), does
-not read as an argument for training-free prompting over a linear
-classifier in any setting where inference cost matters. Even the one
-model that wins does not win by much, or cheaply.
+running 5--16$\times$ longer than any other model's, driven by its
+native reasoning mode left unconstrained on chain-of-thought variants
+(Sec.~\ref{sec:experimental:generation}), for a margin of only $+0.010$
+F1 over a classical baseline that runs in a fraction of a second per
+example with no GPU at all, and qwen3 still trails that baseline on
+accuracy (0.773 vs.\ 0.799). Even the one model that wins does not win
+by much, or cheaply.
 
-That framing holds specifically under F1, the metric this study's main
-grid and significance testing are built around; it does not hold under
-every lens. Sec.~\ref{sec:results:auc}'s confidence-based AUC comparison
-shows qwen3's best scorable variant losing to the classical baseline
-(0.838 vs.\ 0.848), while gemma2, whose F1 (0.530) trails classical by
-the widest margin of any model in this study, is the one model whose AUC
-beats it. ``The one exception'' depends on which metric answers the
-question, and qwen3's true best variant (V8) cannot be evaluated by the
-AUC method at all. This does not weaken the cost argument above; it
-means that argument is one honest answer among two.
+That framing holds under F1 specifically; it does not hold under every
+lens. Sec.~\ref{sec:results:auc}'s confidence-based AUC comparison shows
+qwen3's best scorable variant losing to the classical baseline (0.838
+vs.\ 0.848), while gemma2, whose F1 trails classical by the widest
+margin in this study, is the one model whose AUC beats it. ``The one
+exception'' depends on which metric answers the question, and qwen3's
+true best variant (V8) cannot be evaluated by the AUC method at all:
+one honest answer among two, not a weaker version of the cost argument
+above.
 
 \subsection{Safety Alignment as an Operational Risk}
 \label{sec:discussion:refusal}
 
 Llama-3.1-8B's V14 behavior (Sec.~\ref{sec:results:llama-refusal}) is
 easy to misread as a parsing bug or a prompt-engineering mistake specific
-to one variant. It is neither. The model reads a sexism-classification
+to one variant. It is neither: the model reads a sexism-classification
 request, once asked to reason step by step before answering, as a
 request to generate hateful content rather than analyze it, and declines
-on safety grounds over half the time in V14's specific configuration;
-the same decline shows up, at lower but still substantial rates, across
-every other chain-of-thought variant this model was evaluated on
-(Table~\ref{tab:llama-cot}), so chain-of-thought reasoning itself, not
-any one combination of surrounding components, is what triggers it.
-Scored under this study's own default convention, that decline registers
-as an unremarkable-looking F1 of 0.330 for V14, and quietly deflated
-numbers for several other cells that stay in the main table, each
-indistinguishable on its face from an ordinary weak variant. Only
-inspecting the raw generations, rather than trusting the aggregate
-metric, revealed what was actually happening; a related but mechanically
-distinct pattern (Sec.~\ref{sec:results:llama-refusal}) shows that not
-every elevated \texttt{fail\_ratio} in this model is a refusal at all,
-some are a fixed reasoning-token budget proving too short once the
-prompt also asks for aspect-by-aspect analysis, which is a generation
-setting worth revisiting rather than a safety-alignment story. Röttger et
-al.'s XSTest~\cite{rottger2023xstest} showed the exaggerated-safety
-version of this failure mode under adversarial probing; llama3.1's
-refusals show it can also emerge unprompted, from an ordinary
-classification pipeline, on genuinely on-topic content. For any
-deployment that scores a refusal as a default label rather than flagging
-it, this is a silent failure mode: the system does not error, it
-produces a plausible-looking, systematically wrong answer on a
-substantial share of a specific input class.
+on safety grounds on over half of V14's rows, at lower but still
+substantial rates across every other chain-of-thought variant it was
+evaluated on. Scored under this study's convention, that decline
+registers as an unremarkable F1 of 0.330, indistinguishable from an
+ordinary weak variant until the raw generations, not just the aggregate
+metric, were inspected. Röttger et al.'s
+XSTest~\cite{rottger2023xstest} showed the exaggerated-safety version
+of this failure mode under adversarial
+probing; llama3.1's refusals show it can also emerge unprompted, from an
+ordinary classification pipeline, on genuinely on-topic content. For any
+deployment that scores a refusal as a default label, this is a silent
+failure mode: no error, just a plausible-looking, systematically wrong
+answer on a substantial share of one input class.
 \texttt{fail\_ratio} (Sec.~\ref{sec:experimental:metrics}), not accuracy
 or F1 alone, is what surfaces it, and only because this study checked.
 
@@ -127,13 +109,3 @@ and F1 can look strong while hiding specific, systematic weaknesses that
 only a finer-grained test reveals. This study's subtype table and its
 dual significance tests apply that same argument to sexism detection, in
 two independent places rather than one.
-
-Together, these four points sharpen this study's central claim: prompt
-design produces a genuine, well-measured effect on this task, but one
-that operates inside a ceiling a simple non-LLM baseline already
-exceeds for most models tested; the one model that clears that ceiling
-pays a steep,
-possibly disqualifying compute cost to do so; and the aggregate numbers
-behind all of these conclusions can themselves hide model-specific
-failure modes, a safety refusal or a rare-subtype blind spot, that only
-closer inspection surfaces.

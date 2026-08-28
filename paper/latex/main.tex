@@ -1,24 +1,24 @@
-\documentclass[conference]{IEEEtran}
+\documentclass[runningheads]{llncs}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{hyperref}
 \hypersetup{hidelinks}
+\usepackage{microtype}
+\emergencystretch=3em
 
 \title{A Systematic Evaluation of Prompt Design for LLM-Based Sexism
 Detection}
+\titlerunning{Prompt Design for LLM-Based Sexism Detection}
 % Reverted to this paper's original working-placeholder title on
 % 2026-08-26 at the user's explicit request, undoing the 2026-08-25
 % rename to "The Limits of Prompt Engineering for LLM-Based Sexism
 % Detection."
 
-\author{
-\IEEEauthorblockN{Anonymous Author(s)}
-}
-% Anonymized 2026-08-25 for double-blind review submission. Real author
-% list (restore at camera-ready): Erfan Hoseingholizadeh, Shakiba
-% Mirbagheri, Mina Farmanbar.
+\author{Erfan Hoseingholizadeh \and Shakiba Mirbagheri \and Mina Farmanbar}
+\authorrunning{Hoseingholizadeh et al.}
+\institute{}
 
 \begin{document}
 
@@ -50,12 +50,11 @@ than prior work on few-shot demonstration order would predict. Prompt
 engineering is a real, measurable lever on this task; it is not, on this
 evidence, a substitute for adapting a model to the task's own labeled
 data.
-\end{abstract}
 
-\begin{IEEEkeywords}
-sexism detection, prompt engineering, large language models,
-in-context learning, chain-of-thought prompting, hate speech detection
-\end{IEEEkeywords}
+\keywords{sexism detection \and prompt engineering \and large language
+models \and in-context learning \and chain-of-thought prompting \and
+hate speech detection}
+\end{abstract}
 
 \input{sections/introduction}
 
@@ -73,7 +72,7 @@ in-context learning, chain-of-thought prompting, hate speech detection
 
 \input{sections/conclusion}
 
-\bibliographystyle{IEEEtran}
+\bibliographystyle{splncs04}
 \bibliography{references}
 
 \end{document}

@@ -20,21 +20,18 @@ the six evaluated models. Bold marks the best model for a given variant
 (row); underline marks each model's own best-performing variant
 (column).
 
-\begin{table*}[t]
+\begin{table}[t]
 \centering
 \footnotesize
 \caption{F1 score by prompt variant (V1--V18) and model, full EDOS test
 split ($n=4{,}000$). R = role, A = aspects, C = context, T =
 chain-of-thought, F = few-shot ($k{=}2$ per class). Bold: best model per
-row. Underline: best variant per model (column).
-\textsuperscript{$\dagger$}llama3.1's V14 is omitted: 54.6\% of its
-generations are safety refusals rather than classification attempts
-(Sec.~\ref{sec:results:llama-refusal}). llama3.1's V8, V13, and V15
-cells (F1 0.240, 0.361, 0.360) are reported but carry a related caveat:
-39--49\% of their generations also fail to answer, mostly by the same
-refusal mechanism (Table~\ref{tab:llama-cot}).}
+row; underline: best variant per model (column).
+\textsuperscript{$\dagger$}llama3.1's V14 omission and the V8/V13/V15
+caveat are explained in Sec.~\ref{sec:results:llama-refusal}.}
 \label{tab:main-grid}
 \setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{l ccccc cccccc}
 \toprule
 & \multicolumn{5}{c}{Prompt Features} & \multicolumn{6}{c}{F1 Score} \\
@@ -60,8 +57,9 @@ V16 & \checkmark & \checkmark & \checkmark & \checkmark & -- & 0.474 & 0.473 & 0
 V17 & \checkmark & \checkmark & -- & \checkmark & \checkmark & 0.440 & 0.486 & 0.470 & 0.556 & 0.485 & \textbf{0.586} \\
 V18 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & 0.439 & 0.489 & 0.494 & 0.572 & 0.477 & \textbf{0.591} \\
 \bottomrule
-\end{tabular}
-\end{table*}
+\end{tabular}%
+}
+\end{table}
 
 Two patterns hold across all six models. First, the zero-shot baseline
 (V1) is never any model's best variant, and the fullest five-component
@@ -113,11 +111,10 @@ project's supplementary material.
 \centering
 \footnotesize
 \caption{\texttt{fail\_ratio} for llama3.1's ten other chain-of-thought
-variants (none excluded from Table~\ref{tab:main-grid}; all stay below
-the 0.5 exclusion gate). Refusal share is the fraction of a variant's
-failed rows matching an explicit decline pattern (e.g.\ ``I cannot,''
-``not able to''); the remainder are token-budget truncations, not
-declines (see text).}
+variants. Refusal share is the fraction of a variant's failed rows
+matching an explicit decline pattern (e.g.\ ``I cannot,'' ``not able
+to''); the remainder are token-budget truncations, not declines (see
+text).}
 \label{tab:llama-cot}
 \begin{tabular}{lcccc}
 \toprule
@@ -256,9 +253,9 @@ Qwen3-8B & 0.627 (V8) & 0.779 & $+$0.010 \\
 \end{table}
 
 The headline result of this comparison is not favorable to prompting.
-\textbf{Five of the six models' best training-free prompt variant, after
+Five of the six models' best training-free prompt variant, after
 an 18-point search over prompt design, scores below a bag-of-words
-logistic regression classifier}: a baseline with no language model,
+logistic regression classifier: a baseline with no language model,
 no GPU, and a fraction of a second of CPU inference per example. Only
 qwen3 edges past it, by F1~+0.010, and even qwen3 loses to it on
 accuracy (0.773 vs.\ 0.799). QLoRA fine-tuning and the RoBERTa encoder
