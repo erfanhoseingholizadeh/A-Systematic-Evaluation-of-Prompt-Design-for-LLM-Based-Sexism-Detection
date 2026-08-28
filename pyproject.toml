@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 authors = [
     { name = "Erfan Hoseingholizadeh" },
-    { name = "Shakiba Mirbagheri" },
+    { name = "Shakiba Sadat Mirbagheri" },
     { name = "Mina Farmanbar" },
 ]
 # Direct dependencies are pinned to exact versions verified working

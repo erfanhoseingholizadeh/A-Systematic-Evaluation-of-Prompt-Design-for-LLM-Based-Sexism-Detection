@@ -69,7 +69,7 @@ The paper-scale runs were done on a Slurm GPU cluster. `slurm/run_model.sbatch` 
 
 ## Authors
 
-Erfan Hoseingholizadeh, Shakiba Mirbagheri, Mina Farmanbar.
+Erfan Hoseingholizadeh, Shakiba Sadat Mirbagheri, Mina Farmanbar.
 
 ## License
 
