@@ -1,7 +1,0 @@
-model,baseline_v1_f1,best_prompt_variant,best_prompt_f1,qlora_f1,classical_tfidf_f1,encoder_roberta_f1,best_prompt_beats_classical
-mistral,0.4669,V7,0.5675,0.7878,0.6166,0.7347,False
-phi3,0.1379,V9,0.5655,0.7345,0.6166,0.7347,False
-llama3.1,0.4407,V6,0.5501,0.7954,0.6166,0.7347,False
-qwen2.5,0.5365,V6,0.5851,0.7858,0.6166,0.7347,False
-gemma2,0.4484,V7,0.5304,0.794,0.6166,0.7347,False
-qwen3,0.4809,V8,0.6269,0.7788,0.6166,0.7347,True

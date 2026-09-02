@@ -1,6 +1,6 @@
 # Sexism Prompting
 
-A study of prompt design for sexism detection with instruction-tuned LLMs: eighteen prompt variants (role framing, context, aspect decomposition, chain-of-thought, few-shot) evaluated zero- and few-shot across six models, checked against a classical TF-IDF baseline and two fine-tuned baselines on the same official EDOS test split. The short version of the finding: careful prompt design moves the numbers a lot within its own space, but for five of the six models it never catches up to a plain bag-of-words logistic regression classifier. The full paper is in `paper/latex/`.
+A study of prompt design for sexism detection with instruction-tuned LLMs: eighteen prompt variants (role framing, context, aspect decomposition, chain-of-thought, few-shot) evaluated zero- and few-shot across six models, checked against a classical TF-IDF baseline and two fine-tuned baselines on the same official EDOS test split. The short version of the finding: careful prompt design moves the numbers a lot within its own space, but for five of the six models it never catches up to a plain bag-of-words logistic regression classifier.
 
 This is a real codebase, not a notebook. Everything under `src/sexism_prompting/` is tested and importable, every run is seeded and checkpointed, and the evaluation grid is resumable if it gets killed partway through.
 

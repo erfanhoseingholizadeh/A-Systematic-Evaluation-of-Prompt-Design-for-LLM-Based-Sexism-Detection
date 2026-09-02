@@ -1,7 +1,0 @@
-model,total_hours,mean_sec_per_variant,mean_sec_per_example,slowest_variant,slowest_variant_sec
-mistral,3.92,783.3,0.1958,V10,1555.0
-phi3,3.19,638.2,0.1596,V12,1437.8
-llama3.1,4.71,997.7,0.2494,V18,1890.9
-qwen2.5,1.51,301.6,0.0754,V11,839.7
-gemma2,6.26,1252.9,0.3132,V18,2311.9
-qwen3,23.92,4784.2,1.1961,V18,8806.5
